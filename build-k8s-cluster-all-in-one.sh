@@ -55,4 +55,8 @@ curl https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/cu
 sed -i 's/cidr: 192\.168\.0\.0\/16/cidr: 10.10.0.0\/16/g' custom-resources.yaml
 kubectl create -f custom-resources.yaml
 
+# Setup  Storage Class
+
+echo "https://github.com/kubesphere/ks-devops/discussions/30"
+
 echo "Done !!! --> https://www.cherryservers.com/blog/install-kubernetes-on-ubuntu"
