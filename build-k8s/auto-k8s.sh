@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Login  root
 
 sudo bash ./in-docker-k8s.sh
