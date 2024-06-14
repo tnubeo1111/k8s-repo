@@ -60,8 +60,39 @@ kubectl create -f custom-resources.yaml
 kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
 kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
+
 # Install Ingress
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
 
 
 echo "Done !!! --> https://www.cherryservers.com/blog/install-kubernetes-on-ubuntu"
+
+# Setup loadbalancer using MetaLP
+
+# First edit kube through the following link and also install metalp
+echo "https://metallb.universe.tf/installation/"
+
+mkdir -p metalp
+
+cat <<EOF > metalp/config.yaml
+# Create file config IPAddressPool
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.10.10-192.168.10.100
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool
+EOF
+
+#  kubectl apply -f metalp/config.yaml
