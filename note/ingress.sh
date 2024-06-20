@@ -4,24 +4,12 @@
 
 # Nếu trường hợp chúng ta tạo một ingress cho service trong k8s mà không phải helm nhé.
 
-# sau khi service, deploy, pod đã được running
+# Install Ingress
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
 
-# tiếp tục chúng ta tải file 
+# sau đó kiểm tra xem thử nginx-controller đã được cấp extenal IP chưa (hay còn gọi là loadbalancer đó) 
 
-wget https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
-
-# Lưu ý nên tải file về chung với nhưng file service của chugns ta vì chúng sẽ chạy chung một namespace thì file deply.yaml của ngixn controller cũng như thế
-
-# Sau khi tải về chúng ta vào file deploy.yaml sẽ lại toàn bộ namespace giống với namespace đang chạy các service, deploy, pod,... 
-
-# sau khi sữa xong bắt đầu chúng ta  apply 
-
-kubectl apply -f  deploy.yaml
-
-# sau đó kiểm tra xem thử nginx-controller này đã được cấp extenal IP chưa (hay còn gọi là loadbalancer đó) 
-# ** Lưu ý phải cùng namespace với các service mà chúng ta cần tạo ingress nhé.
-
-# Sau khi có IP rồi chúng ta bắt đầu tạo secret cho domain như hươngs dẫn secret.sh nhé
+# Sau khi có IP rồi chúng ta bắt đầu tạo secret cho domain như hươngs dẫn secret.sh nhé (Lưu ý secret phải được tạo chung namespace chung với service nhé)
 
 # sau đó chúng ta bắt đầy tạo một file yaml với kind là ingress.
 
