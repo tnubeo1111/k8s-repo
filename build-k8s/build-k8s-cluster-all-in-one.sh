@@ -64,6 +64,11 @@ kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storagec
 # Install Ingress
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
 
+# Install Monitoring
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+
 
 echo "Done !!! --> https://www.cherryservers.com/blog/install-kubernetes-on-ubuntu"
 
