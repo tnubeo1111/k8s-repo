@@ -18,16 +18,18 @@ for project in $projects; do
     mkdir -p "$BACKUP_DIR/$project"
     curl -k -u $USERNAME:$PASSWORD "$HARBOR_URL/api/v2.0/projects/$project" > "$BACKUP_DIR/project_$project.json"
     curl -k -u $USERNAME:$PASSWORD "$HARBOR_URL/api/v2.0/projects/$project/repositories" > "$BACKUP_DIR/$project/repositories.json"
-    
-    repositories=$(jq -r '.[].name' "$BACKUP_DIR/$project/repositories.json" | awk -F'/' '{print $2}')
+
+    # Lấy danh sách repositories và loại bỏ phần project trong tên repository
+    repositories=$(jq -r '.[].name' "$BACKUP_DIR/$project/repositories.json" | sed "s/^$project\///")
     for repo in $repositories; do
         mkdir -p "$BACKUP_DIR/$project/$repo"
-        curl -k -u $USERNAME:$PASSWORD "$HARBOR_URL/api/v2.0/projects/$project/repositories/${repo}/artifacts" > "$BACKUP_DIR/$project/${repo}_artifacts.json"
-        
+        # Mã hóa URL để tránh lỗi NOT_FOUND
+        encoded_repo=$(echo "$repo" | sed 's/\//%2F/g')
+        curl -k -u $USERNAME:$PASSWORD "$HARBOR_URL/api/v2.0/projects/$project/repositories/$encoded_repo/artifacts" > "$BACKUP_DIR/$project/${repo}_artifacts.json"
+
         tags=$(jq -r '.[] | .tags[]?.name' "$BACKUP_DIR/$project/${repo}_artifacts.json")
         for tag in $tags; do
             skopeo copy --tls-verify=false docker://$SKOPEO_DOCKER/$project/${repo}:${tag} dir:$BACKUP_DIR/$project/$repo/${tag}
         done
     done
 done
-

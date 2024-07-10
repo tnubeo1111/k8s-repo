@@ -23,7 +23,7 @@ for project in $projects; do
     fi
 
     # Lấy danh sách các repository từ thư mục backup
-    repositories=$(jq -r '.[] | .name' "$BACKUP_DIR/$project/repositories.json" | awk -F'/' '{print $2}')
+    repositories=$(jq -r '.[].name' "$BACKUP_DIR/$project/repositories.json" | sed "s/^$project\///")
     for repo in $repositories; do
         echo "Khôi phục repository: $project/$repo"
 
@@ -36,3 +36,4 @@ for project in $projects; do
     done
 done
 
+echo "Khôi phục dữ liệu hoàn tất!"
