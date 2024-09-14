@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config-syslog
+  namespace: vcr-fluent-syslog
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Log_Level  info
+        log_level debug
+        Parsers_File parsers.conf
+
+    [INPUT]
+        Name   syslog
+        Tag    audit_log
+        Port   5140
+        Parser syslog-audit
+        Mode   tcp
+
+    [FILTER]
+        Name              parser
+        Match             audit_log
+        Key_Name          log
+        Parser            audit-log
+        Reserve_Data      True
+
+    [FILTER]
+        Name              lua
+        Match             audit_log
+        Script            inline
+        Call              remove_escape
+        code              function remove_escape(tag, timestamp, record) local msg = record["submessage"] msg = msg:gsub("\\", "") record["submessage"] = msg return 1, timestamp, record end 
+
+    [OUTPUT]
+        #Name  stdout
+        #Match *
+        Name kafka
+        Match audit_log
+        Brokers 172.25.157.218:9092
+        Topics vcr-syslog
+        Retry_Limit False
+        rdkafka.log.connection.close False
+        Log_Level debug
+        Format json_lines
+
+  parsers.conf: |
+    [PARSER]
+        Name        syslog-audit
+        Format      regex
+        Regex       ^<(?<pri>[0-9]+)>(?<timestamp>[^\s]+) (?<host>[^\s]+) (?<app>[^\s]+)\[([^\]]+)\]: (?<log>[^\n]+)$
+        Time_Key    timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S
+
+    [PARSER]
+        Name        audit-log
+        Format      regex
+        Regex       ^(?<timestamp>[^\s]+) \[(?<level>[A-Z]+)\] \[(?<file>[^:]+):(?<line>[0-9]+)\]\[operator=\"(?<operator>[^\"]+)\" resourceType=\"(?<resourceType>[^\"]+)\" time=\"(?<action_time>[^\"]+)\"]\: action\:(?<action>[^\s]+), resource\:(?<resource>[^,]+)$
+        Time_Key    timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S

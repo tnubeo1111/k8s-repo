@@ -1,0 +1,88 @@
+apiVersion: v1
+data:
+  custom_parsers.conf: |
+    [PARSER]
+        Name docker_no_time
+        Format json
+        Time_Keep Off
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+    [PARSER]
+        Name json
+        Format json
+        Time_Key time
+  fluent-bit.conf: |
+    [SERVICE]
+        Daemon Off
+        Flush 1
+        Log_Level info
+        Log_Level debug
+        Parsers_File /fluent-bit/etc/parsers.conf
+        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port 2020
+        Health_Check On
+
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*ingress-nginx*.log
+        multiline.parser docker, cri
+        Tag kube.ingress-nginx.*
+        Parser json
+        DB      /var/log/flb_kube.db
+        Mem_Buf_Limit 50MB
+        Skip_Long_Lines On
+        Refresh_Interval 10
+        Buffer_Chunk_Size 256k
+        Buffer_Max_Size   10240k
+
+    [FILTER]
+        Name              lua
+        Match             kube.ingress-nginx.*
+        Script            inline
+        Call              remove_escape
+        code              function remove_escape(tag, timestamp, record) local new_record = {} for k, v in pairs(record) do if type(v) == "string" then new_record[k] = v:gsub("\\", "") else new_record[k] = v end end return 1, timestamp, new_record end
+
+    [FILTER]
+        Name kubernetes
+        Match kube.ingress-nginx.*
+        Merge_Log On
+        Keep_Log Off
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude On
+
+    [FILTER]
+        Name           modify
+        Match          kube.ingress-nginx.*
+        Remove         kubernetes
+
+    [FILTER]
+        Name              grep
+        Match             kube.ingress-nginx.*
+        Regex             host vcr.infiniband.vn
+
+    [OUTPUT]
+        Name kafka
+        Match kube.ingress-nginx.*
+        Brokers 172.25.157.218:9092
+        Topics vcr-ingress
+        Retry_Limit False
+        rdkafka.log.connection.close False
+        Log_Level debug
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: fluent-bit
+    meta.helm.sh/release-namespace: vcr-fluent-ingress
+  creationTimestamp: "2024-09-13T09:31:40Z"
+  labels:
+    app.kubernetes.io/instance: fluent-bit
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/version: 3.1.7
+    helm.sh/chart: fluent-bit-0.47.9
+  name: fluent-bit
+  namespace: vcr-fluent-ingress
+  resourceVersion: "257290277"
+  uid: 0b583e95-82bb-4e89-94ec-34c6117e76ca
