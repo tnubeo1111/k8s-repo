@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluent-bit-syslog
+  namespace: vcr-fluent-syslog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:latest
+        volumeMounts:
+        - name: config
+          mountPath: /fluent-bit/etc
+        ports:
+        - containerPort: 5140
+      volumes:
+      - name: config
+        configMap:
+          name: fluent-bit-config-syslog
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker-10-sb
+
